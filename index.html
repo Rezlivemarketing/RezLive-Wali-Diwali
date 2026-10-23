@@ -111,11 +111,23 @@ async function startCamera(wanted){
  video.setAttribute('playsinline','');video.setAttribute('webkit-playsinline','');video.setAttribute('muted','');
  video.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none';
  document.body.appendChild(video);
- const constraints={aspectRatio:{ideal:9/16},width:{ideal:720},height:{ideal:1280},frameRate:{ideal:24,max:30}};
+ const constraints = {
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  frameRate: { ideal: 24, max: 30 }
+};
  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{exact:wanted}}});}
  catch(e){if(wanted==='environment')throw new Error('A back camera is unavailable. Your front camera will stay selected.');stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{ideal:wanted}}});}
  const track=stream.getVideoTracks()[0];let caps;try{caps=track.getCapabilities?.();}catch{}
- if(caps?.zoom){try{await track.applyConstraints({advanced:[{zoom:Math.max(caps.zoom.min,Math.min(0.25,caps.zoom.max))}]});}catch{}}
+ if (caps?.zoom) {
+  try {
+    await track.applyConstraints({
+      advanced: [{ zoom: caps.zoom.min }]
+    });
+  } catch (e) {
+    console.log('Zoom adjustment unavailable');
+  }
+}
  facing=wanted;video.srcObject=stream;
  await deadline(video.play(),15000,'Camera playback did not start. Close other camera apps and retry.');
  await deadline(new Promise(resolve=>{if(video.videoWidth&&video.videoHeight&&video.readyState>=2)return resolve();video.addEventListener('loadeddata',resolve,{once:true});}),15000,'Camera did not supply a video frame. Please retry.');
@@ -126,7 +138,23 @@ async function loop(id){
  while(active&&id===runId){
  if(!switching&&!photoOpen&&video?.readyState>=2&&video.currentTime!==lastTime){
  lastTime=video.currentTime;
- const d=fit(video,'cover');cameraInputCtx.drawImage(video,d[0]/2,d[1]/2,d[2]/2,d[3]/2);
+ cameraInputCtx.clearRect(0,0,360,640);
+
+const scale = Math.min(
+  360 / video.videoWidth,
+  640 / video.videoHeight
+);
+
+const w = video.videoWidth * scale;
+const h = video.videoHeight * scale;
+
+cameraInputCtx.drawImage(
+  video,
+  (360-w)/2,
+  (640-h)/2,
+  w,
+  h
+);
  try{await deadline(segmenter.send({image:cameraInput}),15000,'The live background effect could not render on this browser. Retry in Chrome on Android or Safari on iPhone.');}catch(e){showError(e);closeStudio();return;}
  }
  await new Promise(resolve=>requestAnimationFrame(resolve));
