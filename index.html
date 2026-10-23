@@ -28,10 +28,12 @@ function onResults(r){
  if(!active||switching)return;
  personCtx.globalCompositeOperation='source-over';
  personCtx.clearRect(0,0,canvas.width,canvas.height);
- drawFit(personCtx,r.segmentationMask,'contain');
+ const cameraRect=fit(r.image,'contain');
+ // Model masks may be landscape even for portrait input. Align both to the camera rectangle.
+ personCtx.drawImage(r.segmentationMask,...cameraRect);
  // The mask is opaque on people: keep the image INSIDE it.
  personCtx.globalCompositeOperation='source-in';
- drawFit(personCtx,r.image,'contain');
+ personCtx.drawImage(r.image,...cameraRect);
  personCtx.globalCompositeOperation='source-over';
  ctx.drawImage(backgroundLayer,0,0);
  ctx.drawImage(personLayer,0,0);
