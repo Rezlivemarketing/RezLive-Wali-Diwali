@@ -19,7 +19,14 @@ const canvas=$('#canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const personLayer=document.createElement('canvas'),personCtx=personLayer.getContext('2d');
 const backgroundLayer=document.createElement('canvas'),backgroundCtx=backgroundLayer.getContext('2d');
 for(const c of [personLayer,backgroundLayer]){c.width=canvas.width;c.height=canvas.height;}
+const cameraInput=document.createElement('canvas'),cameraInputCtx=cameraInput.getContext('2d',{alpha:false});
 let chosen,video,stream,segmenter,enginePromise,active=false,switching=false,runId=0;
+function configureCameraFrame(){
+ const scale=Math.min(1,1280/Math.max(video.videoWidth,video.videoHeight));
+ const width=Math.max(1,Math.round(video.videoWidth*scale)),height=Math.max(1,Math.round(video.videoHeight*scale));
+ for(const layer of [canvas,personLayer,backgroundLayer,cameraInput]){layer.width=width;layer.height=height;}
+ if(bg.complete&&bg.naturalWidth)drawFit(backgroundCtx,bg,'cover');
+}
 let facing='user',frameCount=0,lastTime=-1,photoFile=null,photoURL=null,photoOpen=false;
 const bg=new Image();bg.crossOrigin='anonymous';
 function fit(source,mode){const sw=source.videoWidth||source.naturalWidth||source.width,sh=source.videoHeight||source.naturalHeight||source.height,s=(mode==='cover'?Math.max:Math.min)(canvas.width/sw,canvas.height/sh);return[(canvas.width-sw*s)/2,(canvas.height-sh*s)/2,sw*s,sh*s];}
@@ -28,8 +35,8 @@ function onResults(r){
  if(!active||switching)return;
  personCtx.globalCompositeOperation='source-over';
  personCtx.clearRect(0,0,canvas.width,canvas.height);
- const cameraRect=fit(r.image,'contain');
- // Model masks may be landscape even for portrait input. Align both to the camera rectangle.
+ const cameraRect=[0,0,canvas.width,canvas.height];
+ // Output uses the actual camera aspect ratio; never letterbox the person layer.
  personCtx.drawImage(r.segmentationMask,...cameraRect);
  // The mask is opaque on people: keep the image INSIDE it.
  personCtx.globalCompositeOperation='source-in';
@@ -54,19 +61,20 @@ async function engine(){
 async function startCamera(wanted){
  if(stream)stream.getTracks().forEach(t=>t.stop());
  video=document.createElement('video');video.playsInline=true;video.muted=true;
- const constraints={width:{ideal:720},height:{ideal:1280},frameRate:{ideal:24,max:30}};
+ const constraints={aspectRatio:{ideal:9/16},width:{ideal:720},height:{ideal:1280},frameRate:{ideal:24,max:30}};
  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{exact:wanted}}});}
  catch(e){if(wanted==='environment')throw new Error('A back camera is unavailable. Your front camera will stay selected.');stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{ideal:wanted}}});}
  const track=stream.getVideoTracks()[0],caps=track.getCapabilities?.();
  if(caps?.zoom){try{await track.applyConstraints({advanced:[{zoom:Math.max(caps.zoom.min,Math.min(1,caps.zoom.max))}]});}catch{}}
- facing=wanted;video.srcObject=stream;await video.play();lastTime=-1;
+ facing=wanted;video.srcObject=stream;await video.play();configureCameraFrame();lastTime=-1;
  $('#flip').innerHTML='↻<br><small>'+(facing==='user'?'Back camera':'Front camera')+'</small>';
 }
 async function loop(id){
  while(active&&id===runId){
  if(!switching&&!photoOpen&&video?.readyState>=2&&video.currentTime!==lastTime){
  lastTime=video.currentTime;
- try{await segmenter.send({image:video});}catch(e){showError('Camera effect interrupted. Please reopen the destination.');closeStudio();return;}
+ cameraInputCtx.drawImage(video,0,0,cameraInput.width,cameraInput.height);
+ try{await segmenter.send({image:cameraInput});}catch(e){showError('Camera effect interrupted. Please reopen the destination.');closeStudio();return;}
  }
  await new Promise(resolve=>requestAnimationFrame(resolve));
  }
