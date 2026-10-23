@@ -13,7 +13,7 @@
 <section id="result"><div class="resultCopy"><div class="logo" style="color:#fff">RezLive<span style="color:#ffd15a">WALI DIWALI</span></div><h2>Your Diwali is ready.</h2><p>Share the journey. Celebrate the dream.</p></div><img id="photo" alt="Your RezLive Wali Diwali portrait"><button id="save" class="download">Save / share photo</button><a id="download" class="download" download="rezlive-wali-diwali.jpg">Download photo</a><p id="saveHint">On iPhone, choose Save Image from the share sheet. Downloads may appear in Files on other browsers.</p><button id="again" class="again">Create another travel moment</button></section></main>
 
 <script>
-const places=[['Paris','France','https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1000&q=85'],['London','UK','https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1000&q=85'],['Dubai','UAE','https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1000&q=85'],['New York','USA','https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=1000&q=85'],['Switzerland','Alps','https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=1000&q=85'],['Tokyo','Japan','https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?auto=format&fit=crop&w=1000&q=85'],['Rome','Italy','https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1000&q=85'],['Singapore','Singapore','https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1000&q=85'],['Bali','Indonesia','https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1000&q=85'],['Istanbul','Türkiye','https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1000&q=85']];
+const places=[['Paris','France','assets/paris.jpg'],['London','UK','https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1000&q=85'],['Dubai','UAE','https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1000&q=85'],['New York','USA','https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=1000&q=85'],['Switzerland','Alps','https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=1000&q=85'],['Tokyo','Japan','https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?auto=format&fit=crop&w=1000&q=85'],['Rome','Italy','https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1000&q=85'],['Singapore','Singapore','https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1000&q=85'],['Bali','Indonesia','https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1000&q=85'],['Istanbul','Türkiye','https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1000&q=85']];
 const $=s=>document.querySelector(s);
 const canvas=$('#canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const personLayer=document.createElement('canvas'),personCtx=personLayer.getContext('2d');
@@ -44,7 +44,8 @@ function onResults(r){
  personCtx.drawImage(r.image,...cameraRect);
  personCtx.globalCompositeOperation='source-over';
  ctx.drawImage(backgroundLayer,0,0);
- ctx.drawImage(personLayer,0,0);
+ const subjectScale=0.8;
+ ctx.drawImage(personLayer,canvas.width*(1-subjectScale)/2,canvas.height*(1-subjectScale),canvas.width*subjectScale,canvas.height*subjectScale);
  frameCount++;
  $('#shutter').disabled=false;
  $('#loading').classList.add('hidden');
