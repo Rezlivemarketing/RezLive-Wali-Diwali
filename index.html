@@ -8,10 +8,10 @@
 .welcome h1{max-width:100%;font-size:36px;line-height:1.05}.stage canvas{object-fit:cover;position:absolute;inset:0;width:100%;height:100%}.capturebar{justify-content:space-around;padding:0 12px}.capturebar .control{width:80px;min-height:58px}.capturebar small{font-size:10px}#thumbImage{width:38px;height:48px;object-fit:cover;display:none;margin:auto}.shutter:disabled{opacity:.4}.tip{padding:0 16px}.download{border:0;width:100%;font:inherit;font-weight:bold}#result{position:fixed;inset:0;z-index:10;overflow:auto;width:min(100%,520px);margin:auto}
 </style></head>
 <body><main class="app">
-<section id="picker"><div class="top"><div class="logo">RezLive<span>WALI DIWALI</span></div><a class="site" href="https://rezlive.com" target="_blank" rel="noreferrer">rezlive.com ↗</a></div><div class="welcome"><h1>Select the destination for your <em>Diwali Family Photo.</em></h1><div class="promise"><i>✓</i> Your photo stays on your device. Nothing is uploaded.</div><div class="panel"><h2>Where are you celebrating?</h2><p>Select a destination, then open the live camera.</p><div id="cities" class="cities"></div><p class="fine">Powered by RezLive.com · Make travel dreams real</p></div></div></section>
+<section id="picker"><div class="top"><div class="logo">RezLive<span>WALI DIWALI</span></div><a class="site" href="https://rezlive.com" target="_blank" rel="noreferrer">rezlive.com ↗</a></div><div class="welcome"><h1>Select the destination for your <em>Diwali Family Photo.</em></h1><div class="promise"><i>✓</i> Your photo stays on your device. Nothing is uploaded.</div><div class="panel"><h2>Where are you celebrating?</h2><p>Select a destination, then open the live camera.</p><div id="cameraError" hidden role="alert" style="padding:14px;background:#fff0df;border-radius:12px;margin-bottom:12px"><p id="errorText"></p><button id="retryCamera" type="button">Retry camera</button></div><div id="cities" class="cities"></div><p class="fine">Powered by RezLive.com · Make travel dreams real</p></div></div></section>
 <section id="studio"><div class="stage"><canvas id="canvas" width="720" height="1280"></canvas><div class="loading" id="loading">Preparing your live Diwali background…<br><small>This can take a few seconds the first time.</small></div><div class="studioTop"><button id="back" class="back">←</button><div class="title" id="liveTitle">RezLive Wali Diwali<small>LIVE BACKGROUND</small></div></div><p class="tip">Keep everyone inside the camera view.</p><div class="capturebar"><button id="flip" class="control" aria-label="Switch camera">↻<br><small>Back camera</small></button><button id="shutter" class="shutter" aria-label="Take photo" disabled></button><button id="thumbnail" class="control" aria-label="View last photo" disabled><img id="thumbImage" alt="Last photo"><small>Photos</small></button></div><div class="brandbar">REZLIVE WALI DIWALI · REZLIVE.COM</div></div></section>
 <section id="result"><div class="resultCopy"><div class="logo" style="color:#fff">RezLive<span style="color:#ffd15a">WALI DIWALI</span></div><h2>Your Diwali is ready.</h2><p>Share the journey. Celebrate the dream.</p></div><img id="photo" alt="Your RezLive Wali Diwali portrait"><button id="save" class="download">Save / share photo</button><a id="download" class="download" download="rezlive-wali-diwali.jpg">Download photo</a><p id="saveHint">On iPhone, choose Save Image from the share sheet. Downloads may appear in Files on other browsers.</p><button id="again" class="again">Create another travel moment</button></section></main>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/selfie_segmentation.js" crossorigin="anonymous"></script>
+
 <script>
 const places=[['Paris','France','https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1000&q=85'],['London','UK','https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1000&q=85'],['Dubai','UAE','https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1000&q=85'],['New York','USA','https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=1000&q=85'],['Switzerland','Alps','https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=1000&q=85'],['Tokyo','Japan','https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?auto=format&fit=crop&w=1000&q=85'],['Rome','Italy','https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1000&q=85'],['Singapore','Singapore','https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1000&q=85'],['Bali','Indonesia','https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1000&q=85'],['Istanbul','Türkiye','https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1000&q=85']];
 const $=s=>document.querySelector(s);
@@ -23,7 +23,8 @@ const cameraInput=document.createElement('canvas'),cameraInputCtx=cameraInput.ge
 let chosen,video,stream,segmenter,enginePromise,active=false,switching=false,runId=0;
 function configureCameraFrame(){
  // One portrait frame from camera input through segmentation, preview and export.
- for(const layer of [canvas,personLayer,backgroundLayer,cameraInput]){layer.width=720;layer.height=1280;}
+ for(const layer of [canvas,personLayer,backgroundLayer]){layer.width=720;layer.height=1280;}
+ cameraInput.width=360;cameraInput.height=640;
  if(bg.complete&&bg.naturalWidth)drawFit(backgroundCtx,bg,'cover');
 }
 
@@ -48,52 +49,84 @@ function onResults(r){
  $('#shutter').disabled=false;
  $('#loading').classList.add('hidden');
 }
+function deadline(promise,ms,message){let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(message)),ms);})]).finally(()=>clearTimeout(timer));}
+let scriptPromise;
+async function loadCameraLibrary(){
+ if(typeof SelfieSegmentation!=='undefined')return;
+ if(!scriptPromise)scriptPromise=(async()=>{
+ for(const host of ['https://cdn.jsdelivr.net/npm/','https://unpkg.com/']){
+ const tag=document.createElement('script');tag.crossOrigin='anonymous';tag.src=host+'@mediapipe/selfie_segmentation@0.1.1675465747/selfie_segmentation.js';
+ try{await deadline(new Promise((resolve,reject)=>{tag.onload=resolve;tag.onerror=reject;document.head.appendChild(tag);}),15000,'Camera download timed out.');
+ if(typeof SelfieSegmentation!=='undefined')return;}catch{}tag.remove();
+ }throw new Error('Camera effect could not download. Check your internet connection and retry.');
+ })().catch(e=>{scriptPromise=null;throw e;});
+ await scriptPromise;
+}
 async function engine(){
  if(!enginePromise)enginePromise=(async()=>{
- if(typeof SelfieSegmentation==='undefined')throw new Error('The camera effect could not load. Check your internet connection.');
+ await loadCameraLibrary();
  segmenter=new SelfieSegmentation({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/'+f});
  segmenter.setOptions({modelSelection:1,selfieMode:false});
  segmenter.onResults(onResults);
- await segmenter.initialize();return segmenter;
+ await deadline(segmenter.initialize(),30000,'Camera effect took too long to start. Please retry in Chrome on Android or Safari on iPhone.');return segmenter;
  })().catch(e=>{enginePromise=null;throw e;});
  return enginePromise;
 }
 async function startCamera(wanted){
  if(stream)stream.getTracks().forEach(t=>t.stop());
- video=document.createElement('video');video.playsInline=true;video.muted=true;
+ if(video){video.pause();video.srcObject=null;video.remove();}
+ if(!navigator.mediaDevices?.getUserMedia)throw new Error('This browser cannot open the camera. Open this HTTPS link in Chrome on Android or Safari on iPhone.');
+ video=document.createElement('video');video.playsInline=true;video.muted=true;video.autoplay=true;
+ video.setAttribute('playsinline','');video.setAttribute('webkit-playsinline','');video.setAttribute('muted','');
+ video.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none';
+ document.body.appendChild(video);
  const constraints={aspectRatio:{ideal:9/16},width:{ideal:720},height:{ideal:1280},frameRate:{ideal:24,max:30}};
  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{exact:wanted}}});}
  catch(e){if(wanted==='environment')throw new Error('A back camera is unavailable. Your front camera will stay selected.');stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{ideal:wanted}}});}
- const track=stream.getVideoTracks()[0],caps=track.getCapabilities?.();
+ const track=stream.getVideoTracks()[0];let caps;try{caps=track.getCapabilities?.();}catch{}
  if(caps?.zoom){try{await track.applyConstraints({advanced:[{zoom:Math.max(caps.zoom.min,Math.min(1,caps.zoom.max))}]});}catch{}}
- facing=wanted;video.srcObject=stream;await video.play();configureCameraFrame();lastTime=-1;
+ facing=wanted;video.srcObject=stream;
+ await deadline(video.play(),15000,'Camera playback did not start. Close other camera apps and retry.');
+ await deadline(new Promise(resolve=>{if(video.videoWidth&&video.videoHeight&&video.readyState>=2)return resolve();video.addEventListener('loadeddata',resolve,{once:true});}),15000,'Camera did not supply a video frame. Please retry.');
+ configureCameraFrame();lastTime=-1;
  $('#flip').innerHTML='↻<br><small>'+(facing==='user'?'Back camera':'Front camera')+'</small>';
 }
 async function loop(id){
  while(active&&id===runId){
  if(!switching&&!photoOpen&&video?.readyState>=2&&video.currentTime!==lastTime){
  lastTime=video.currentTime;
- drawFit(cameraInputCtx,video,'cover');
- try{await segmenter.send({image:cameraInput});}catch(e){showError('Camera effect interrupted. Please reopen the destination.');closeStudio();return;}
+ const d=fit(video,'cover');cameraInputCtx.drawImage(video,d[0]/2,d[1]/2,d[2]/2,d[3]/2);
+ try{await deadline(segmenter.send({image:cameraInput}),15000,'The live background effect could not render on this browser. Retry in Chrome on Android or Safari on iPhone.');}catch(e){showError(e);closeStudio();return;}
  }
  await new Promise(resolve=>requestAnimationFrame(resolve));
  }
 }
-function showError(message){alert(message);}
+function showError(message){
+ const names={NotAllowedError:'Camera permission was blocked. Allow Camera in your browser site settings, then retry.',NotFoundError:'No camera was found on this device.',NotReadableError:'The camera is busy. Close other camera apps and retry.'};
+ $('#errorText').textContent=names[message?.name]||message?.message||String(message);
+ $('#cameraError').hidden=false;
+}
+$('#retryCamera').onclick=()=>{$('#cameraError').hidden=true;if(chosen)openPlace(chosen);};
 async function openPlace(p){
- if(active)return;chosen=p;active=true;const id=++runId;frameCount=0;$('#shutter').disabled=true;
+ if(active)return;chosen=p;active=true;photoOpen=false;const id=++runId;frameCount=0;$('#shutter').disabled=true;
  $('#picker').classList.add('hidden');$('#studio').style.display='block';
- $('#loading').classList.remove('hidden');$('#liveTitle').firstChild.textContent='Diwali in '+p[0];
+ $('#loading').textContent='Opening camera… Please allow camera access.';$('#loading').classList.remove('hidden');$('#liveTitle').firstChild.textContent='Diwali in '+p[0];
  try{
- const imageReady=new Promise((ok,no)=>{bg.onload=ok;bg.onerror=()=>no(new Error('Destination image could not load. Try again.'));bg.src=p[2];});
- await Promise.all([engine(),imageReady,startCamera(facing)]);
+ const imageReady=new Promise(resolve=>{bg.onload=()=>resolve(null);bg.onerror=()=>resolve(new Error('Destination image could not load. Try again.'));bg.src=p[2];});
+ $('#cameraError').hidden=true;
+ await startCamera(facing);
+ if(!active||id!==runId){stream?.getTracks().forEach(t=>t.stop());return;}
+ $('#loading').textContent='Loading your live Diwali effect…';
+ const [,imageError]=await Promise.all([engine(),deadline(imageReady,20000,'Destination image took too long to load. Please retry.')]);
+ if(imageError)throw imageError;
+ $('#loading').textContent='Starting your live background…';
  if(!active||id!==runId){stream?.getTracks().forEach(t=>t.stop());return;}
  backgroundCtx.clearRect(0,0,canvas.width,canvas.height);drawFit(backgroundCtx,bg,'cover');
  loop(id);
- }catch(e){showError(e.message||'Please allow camera access and try again.');closeStudio();}
+ }catch(e){showError(e);closeStudio();}
 }
 places.forEach(p=>{const b=document.createElement('button');b.className='city';b.style.setProperty('--bg','url("'+p[2]+'")');b.innerHTML='<b>'+p[0]+'</b><small>'+p[1]+'</small>';b.onclick=()=>openPlace(p);$('#cities').append(b);});
-function closeStudio(){active=false;runId++;stream?.getTracks().forEach(t=>t.stop());$('#studio').style.display='none';$('#picker').classList.remove('hidden');}
+function closeStudio(){active=false;runId++;stream?.getTracks().forEach(t=>t.stop());if(video){video.pause();video.srcObject=null;video.remove();}$('#studio').style.display='none';$('#picker').classList.remove('hidden');}
 $('#back').onclick=closeStudio;
 $('#flip').onclick=async()=>{
  if(switching)return;switching=true;$('#flip').disabled=true;const previous=facing;
