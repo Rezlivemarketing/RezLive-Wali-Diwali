@@ -115,7 +115,7 @@ async function startCamera(wanted){
  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{exact:wanted}}});}
  catch(e){if(wanted==='environment')throw new Error('A back camera is unavailable. Your front camera will stay selected.');stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{ideal:wanted}}});}
  const track=stream.getVideoTracks()[0];let caps;try{caps=track.getCapabilities?.();}catch{}
- if(caps?.){try{await track.applyConstraints({advanced:[{:Math.max(caps.zoom.min,Math.min(10,caps.zoom.max))}]});}catch{}}
+ if(caps?.){try{await track.applyConstraints({advanced:[{:Math.max(caps.zoom.min,Math.min(1,caps.zoom.max))}]});}catch{}}
  facing=wanted;video.srcObject=stream;
  await deadline(video.play(),15000,'Camera playback did not start. Close other camera apps and retry.');
  await deadline(new Promise(resolve=>{if(video.videoWidth&&video.videoHeight&&video.readyState>=2)return resolve();video.addEventListener('loadeddata',resolve,{once:true});}),15000,'Camera did not supply a video frame. Please retry.');
