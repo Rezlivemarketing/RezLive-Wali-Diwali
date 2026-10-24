@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f6cd42"><title>RezLive Wali Diwali — Full-Screen Photo Booth</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f6cd42"><title>RezLive Wali Diwali — Natural Portrait Framing</title>
 <style>
 :root{--orange:#ff5a25;--sun:#ffb629;--ink:#1f1930}*{box-sizing:border-box}body{margin:0;background:#fff6e9;color:var(--ink);font-family:Arial,Helvetica,sans-serif}.app{width:min(100%,520px);min-height:100svh;margin:auto;overflow:hidden;background:radial-gradient(circle at 84% 4%,#ffd960 0,transparent 22rem),#fff7ea}.top{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 8px}.logo{font-size:25px;line-height:.85;font-weight:900;letter-spacing:-1.8px;color:#ef4d28}.logo span{display:block;font-size:11px;color:#271b36;letter-spacing:1.2px;margin-top:6px}.site{font-size:12px;font-weight:800;color:#271b36;text-decoration:none;border-bottom:2px solid var(--orange);padding-bottom:3px}.welcome{padding:22px 20px 36px}.tag{display:inline-block;background:#261b35;color:#fff;padding:7px 11px;border-radius:999px;font-size:10px;font-weight:bold;letter-spacing:1.1px}.welcome h1{font-size:46px;line-height:.91;letter-spacing:-2.8px;margin:17px 0 12px;max-width:8ch}.welcome h1 em{color:var(--orange);font-style:normal}.intro{font-size:15px;line-height:1.46;color:#625969;max-width:31ch}.promise{display:flex;gap:9px;align-items:center;margin:18px 0 21px;font-size:12px;font-weight:bold;color:#4d4256}.promise i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#dff7ea;color:#237147;font-style:normal}.panel{background:#fff;border:1px solid #f0dfcb;border-radius:24px;padding:17px;box-shadow:0 17px 40px #6d3a1b17}.panel h2{font-size:19px;letter-spacing:-.7px;margin:0}.panel p{margin:5px 0 14px;color:#746b75;font-size:12px}.cities{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;max-height:305px;overflow:auto;padding:2px}.city{border:0;border-radius:15px;min-height:103px;overflow:hidden;position:relative;background-image:linear-gradient(#0000,#0009),var(--bg);background-size:cover;background-position:center;color:#fff;text-align:left;padding:12px;box-shadow:inset 0 0 0 1px #fff2}.city.selected{outline:3px solid var(--sun);outline-offset:2px}.city b{position:absolute;bottom:11px;left:11px;font-size:15px}.city small{position:absolute;bottom:11px;right:10px;font-size:10px;opacity:.9}.go{width:100%;border:0;border-radius:14px;background:linear-gradient(100deg,var(--orange),#fa3375);color:#fff;padding:15px;margin-top:16px;font-weight:900;font-size:14px}.go:disabled{opacity:.4}.fine{text-align:center;font-size:10px;color:#8b7e86;margin:11px 0 0}.fine:before{content:"●";color:#29a264;margin-right:4px}
 #studio,#result{display:none;min-height:100svh;background:#171123;color:#fff}.studioTop{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:18px;background:linear-gradient(#000a,transparent)}.back,.control{border:0;background:#fff2;color:#fff;border-radius:999px;padding:10px 12px;font-weight:bold}.title{text-align:center;font-weight:900;font-size:13px;letter-spacing:.2px}.title small{display:block;font-size:9px;opacity:.75;margin-top:3px;letter-spacing:1px}.stage{position:relative;width:100%;height:100svh;overflow:hidden;background:#1e1525}.stage canvas{width:100%;height:100%;display:block;object-fit:cover}.loading{position:absolute;z-index:2;top:50%;left:50%;transform:translate(-50%,-50%);width:min(84%,320px);padding:19px;border-radius:18px;text-align:center;background:#251b34e8;font-size:13px;line-height:1.4}.capturebar{position:absolute;z-index:3;bottom:max(26px,env(safe-area-inset-bottom));left:0;right:0;display:flex;justify-content:center;align-items:center;gap:26px}.shutter{width:72px;height:72px;border-radius:50%;border:6px solid #fff;background:var(--orange);box-shadow:0 0 0 3px #ff5a25}.tip{position:absolute;z-index:3;bottom:118px;left:0;right:0;text-align:center;font-size:11px;text-shadow:0 1px 4px #000}.brandbar{position:absolute;z-index:3;bottom:0;left:0;right:0;text-align:center;padding:10px;background:linear-gradient(transparent,#000b);font-size:10px;font-weight:bold;letter-spacing:1px}.hidden{display:none!important}
@@ -69,9 +69,9 @@ body{background:#f9efc9}
 </style></head>
 <body><main class="app">
 <section id="picker"><div class="top"><div class="logo">RezLive<span>WALI DIWALI</span></div><a class="site" href="https://rezlive.com" target="_blank" rel="noreferrer">rezlive.com ↗</a></div><div class="welcome"><div class="diwali-glow" aria-hidden="true"><span>✦</span><div class="diya"></div><span>✦</span></div><h1>Select the destination for your <em>Diwali Family Photo.</em></h1><div class="promise"><i>✓</i> Your photo stays on your device. Nothing is uploaded.</div><div class="panel"><h2>Where are you celebrating?</h2><p>Select a destination, then open the live camera.</p><div id="cameraError" hidden role="alert" style="padding:14px;background:#fff0df;border-radius:12px;margin-bottom:12px"><p id="errorText"></p><button id="retryCamera" type="button">Retry camera</button></div><div id="cities" class="cities"></div><p class="fine">Powered by RezLive.com · Make travel dreams real</p></div></div></section>
-<section id="studio"><div class="stage"><canvas id="canvas" width="720" height="1280"></canvas><div class="loading" id="loading">Preparing your live Diwali background…<br><small>This can take a few seconds the first time.</small></div><div class="studioTop"><button id="back" class="back">←</button><div class="title" id="liveTitle">RezLive Wali Diwali<small>LIVE BACKGROUND</small></div></div><p class="tip">Adjust face size with − / + · Rotate your phone anytime</p>
+<section id="studio"><div class="stage"><canvas id="canvas" width="720" height="1280"></canvas><div class="loading" id="loading">Preparing your live Diwali background…<br><small>This can take a few seconds the first time.</small></div><div class="studioTop"><button id="back" class="back">←</button><div class="title" id="liveTitle">RezLive Wali Diwali<small>LIVE BACKGROUND</small></div></div><p class="tip">Adjust your size with − / + · Step back for more people</p>
 <div class="framingControls" aria-label="Photo framing">
-  <div class="frameControlGroup" aria-label="Face size controls"><span>Face</span><button id="faceMinus" type="button" aria-label="Make face smaller">−</button><output id="faceScale">1.2×</output><button id="facePlus" type="button" aria-label="Make face larger">+</button></div>
+  <div class="frameControlGroup" aria-label="Face size controls"><span>Person</span><button id="faceMinus" type="button" aria-label="Make person smaller">−</button><output id="faceScale">0.8×</output><button id="facePlus" type="button" aria-label="Make person larger">+</button></div>
   <div class="frameControlGroup" aria-label="Background position controls"><span>BG</span><button id="bgUp" type="button" aria-label="Move landmark up">↑</button><button id="bgDown" type="button" aria-label="Move landmark down">↓</button></div>
 </div><div class="capturebar"><button id="flip" class="control" aria-label="Switch camera">↻<br><small>Back camera</small></button><button id="shutter" class="shutter" aria-label="Take photo" disabled></button><button id="thumbnail" class="control" aria-label="View last photo" disabled><img id="thumbImage" alt="Last photo"><small>Photos</small></button></div><div class="brandbar">REZLIVE WALI DIWALI · REZLIVE.COM</div></div></section>
 <section id="result"><div class="resultCopy"><div class="logo" style="color:#fff">RezLive<span style="color:#ffd15a">WALI DIWALI</span></div><h2>Your Diwali is ready.</h2><p>Share the journey. Celebrate the dream.</p></div><img id="photo" alt="Your RezLive Wali Diwali portrait"><button id="save" class="download">Save / share photo</button><a id="download" class="download" download="rezlive-wali-diwali.jpg">Download photo</a><p id="saveHint">On iPhone, choose Save Image from the share sheet. Downloads may appear in Files on other browsers.</p><button id="again" class="again">Create another travel moment</button></section></main>
@@ -95,6 +95,7 @@ const personLayer=document.createElement('canvas'),personCtx=personLayer.getCont
 const backgroundLayer=document.createElement('canvas'),backgroundCtx=backgroundLayer.getContext('2d');
 for(const c of [personLayer,backgroundLayer]){c.width=canvas.width;c.height=canvas.height;}
 const cameraInput=document.createElement('canvas'),cameraInputCtx=cameraInput.getContext('2d',{alpha:false});
+const isolatedPerson=document.createElement('canvas'),isolatedPersonCtx=isolatedPerson.getContext('2d');
 let chosen,video,stream,segmenter,enginePromise,active=false,switching=false,runId=0;
 // Canvas, camera segmentation and exported photo all use the device's live aspect ratio.
 // The long edge is rendered at 1280 px, whether portrait or landscape.
@@ -106,13 +107,13 @@ function configureCameraFrame(){
  const scale=1280/Math.max(viewW,viewH);
  const outW=Math.max(2,Math.round(viewW*scale));
  const outH=Math.max(2,Math.round(viewH*scale));
- if(canvas.width===outW&&canvas.height===outH&&cameraInput.width>0)return;
+ if(canvas.width===outW&&canvas.height===outH)return;
  for(const layer of [canvas,personLayer,backgroundLayer]){
    layer.width=outW;layer.height=outH;
  }
- // Half-resolution segmentation for smoother operation on mobile phones.
- cameraInput.width=Math.max(2,Math.round(outW/2));
- cameraInput.height=Math.max(2,Math.round(outH/2));
+ // Camera input is intentionally NOT resized to the preview's shape.
+ // MediaPipe sees the camera's native aspect ratio, while the generated
+ // Diwali background still fills the entire portrait/landscape screen.
  if(bg.complete&&bg.naturalWidth)setDefaultBackgroundFocus();
  frameCount=0;
  $('#shutter').disabled=true;
@@ -122,8 +123,18 @@ function configureCameraFrame(){
 let facing='user',frameCount=0,lastTime=-1,photoFile=null,photoURL=null,photoOpen=false;
 const bg=new Image();bg.crossOrigin='anonymous';
 function fit(source,mode){const sw=source.videoWidth||source.naturalWidth||source.width,sh=source.videoHeight||source.naturalHeight||source.height,s=(mode==='cover'?Math.max:Math.min)(canvas.width/sw,canvas.height/sh);return[(canvas.width-sw*s)/2,(canvas.height-sh*s)/2,sw*s,sh*s];}
-// Person zoom is independent of the scenery. 1× is the camera's normal view.
-let faceZoom=1.2;
+// Person framing is a SOFTWARE size adjustment, not hardware lens zoom.
+// Smaller in portrait by default; unlike the earlier 1.2×, this never crops
+// camera pixels to make the face bigger. Users may adjust from 0.4× to 1.5×.
+let faceZoom=.8;
+let faceSizeManuallySet=false;
+function initialPersonSize(){return canvas.height>canvas.width ? .8 : 1.0;}
+function resetPersonSize(){
+ faceZoom=initialPersonSize();
+ faceSizeManuallySet=false;
+ $('#faceScale').textContent=faceZoom.toFixed(1)+'×';
+}
+
 // Paris uses a higher landscape crop to keep the Eiffel Tower's top visible.
 let backgroundFocusY=0.5;
 function defaultBgFocus(){
@@ -143,18 +154,37 @@ function renderBackground(){
 function setDefaultBackgroundFocus(){backgroundFocusY=defaultBgFocus();renderBackground();}
 function drawFit(target,source,mode){target.drawImage(source,...fit(source,mode));}
 function onResults(r){
- if(!active||switching)return;
- personCtx.globalCompositeOperation='source-over';
- personCtx.clearRect(0,0,canvas.width,canvas.height);
- const cameraRect=[0,0,canvas.width,canvas.height];
- // The mask and camera image share the same aspect ratio as the output canvas.
- personCtx.drawImage(r.segmentationMask,...cameraRect);
- // The mask is opaque on people: keep the image INSIDE it.
- personCtx.globalCompositeOperation='source-in';
- personCtx.drawImage(r.image,...cameraRect);
- personCtx.globalCompositeOperation='source-over';
- ctx.drawImage(backgroundLayer,0,0);
- ctx.drawImage(personLayer,0,0);
+ if(!active||switching||photoOpen)return;
+ const sw=r.image?.width||cameraInput.width;
+ const sh=r.image?.height||cameraInput.height;
+ if(!sw||!sh)return;
+ // 1. The AI cutout is created at the source camera's actual aspect ratio.
+ //    This avoids the portrait `cover` crop that previously enlarged an ear
+ //    or face into the entire portrait preview.
+ if(isolatedPerson.width!==sw||isolatedPerson.height!==sh){
+   isolatedPerson.width=sw;
+   isolatedPerson.height=sh;
+ }
+ isolatedPersonCtx.globalCompositeOperation='source-over';
+ isolatedPersonCtx.clearRect(0,0,sw,sh);
+ isolatedPersonCtx.drawImage(r.segmentationMask,0,0,sw,sh);
+ isolatedPersonCtx.globalCompositeOperation='source-in';
+ isolatedPersonCtx.drawImage(r.image,0,0,sw,sh);
+ isolatedPersonCtx.globalCompositeOperation='source-over';
+
+ // 2. Paint the DESTINATION edge-to-edge first, without placeholders.
+ ctx.drawImage(backgroundLayer,0,0,canvas.width,canvas.height);
+
+ // 3. Fit the isolated person *inside* the photo, without cropping them.
+ //    Transparent space around them shows the same full-screen background.
+ //    The frame's baseline stays towards the bottom, like a photo booth.
+ const cw=canvas.width,ch=canvas.height;
+ const fitScale=Math.min(cw/sw,ch/sh);
+ const scale=fitScale*faceZoom;
+ const dw=sw*scale,dh=sh*scale;
+ const dx=(cw-dw)/2;
+ const dy=ch-dh; // feet/bottom anchored; no subject image is stretched
+ ctx.drawImage(isolatedPerson,dx,dy,dw,dh);
  frameCount++;
  $('#shutter').disabled=false;
  $('#loading').classList.add('hidden');
@@ -190,7 +220,10 @@ async function startCamera(wanted){
  video.setAttribute('playsinline','');video.setAttribute('webkit-playsinline','');video.setAttribute('muted','');
  video.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none';
  document.body.appendChild(video);
- const landscape=window.innerWidth>window.innerHeight;
+ const landscape=$('#studio .stage').clientWidth>$('#studio .stage').clientHeight;
+ // A native portrait stream is preferable on phones. If a browser provides
+ // a landscape stream anyway, the new segmentation pipeline still works
+ // because it never forcibly cover-crops the person's video.
  const constraints={
    width:{ideal:landscape?1280:720},
    height:{ideal:landscape?720:1280},
@@ -214,26 +247,32 @@ async function startCamera(wanted){
  cameraRatioIsLandscape=$('#studio .stage').clientWidth>$('#studio .stage').clientHeight;
  $('#flip').innerHTML='↻<br><small>'+(facing==='user'?'Back camera':'Front camera')+'</small>';
 }
+// The segmentation buffer always follows the camera VIDEO, not the phone
+// screen, so it cannot silently crop a landscape stream into a portrait one.
+function updateCameraInputSize(){
+ const vw=video.videoWidth, vh=video.videoHeight;
+ if(!vw||!vh)return;
+ const scale=Math.min(1,640/Math.max(vw,vh));
+ const w=Math.max(2,Math.round(vw*scale));
+ const h=Math.max(2,Math.round(vh*scale));
+ if(cameraInput.width!==w||cameraInput.height!==h){
+   cameraInput.width=w;cameraInput.height=h;
+ }
+}
 async function loop(id){
  while(active&&id===runId){
- if(!switching&&!photoOpen&&video?.readyState>=2&&video.currentTime!==lastTime){
- lastTime=video.currentTime;
-  // FULL-BLEED CAMERA: process exactly the same area as the preview/export.
-  // No black bars, no side placeholders and no stretching of the person.
-  // If the physical camera ratio differs, crop it symmetrically rather than
-  // letterboxing. Whenever supported, our camera constraints request a
-  // portrait source in portrait and a landscape source in landscape.
-  const iw=cameraInput.width,ih=cameraInput.height;
-  const sw=video.videoWidth,sh=video.videoHeight;
-  const cropScale=Math.max(iw/sw,ih/sh)*faceZoom;
-  const sourceW=Math.min(sw,iw/cropScale);
-  const sourceH=Math.min(sh,ih/cropScale);
-  const sourceX=(sw-sourceW)/2;
-  const sourceY=(sh-sourceH)/2;
-  cameraInputCtx.drawImage(video,sourceX,sourceY,sourceW,sourceH,0,0,iw,ih);
- try{await deadline(segmenter.send({image:cameraInput}),15000,'The live background effect could not render on this browser. Retry in Chrome on Android or Safari on iPhone.');}catch(e){showError(e);closeStudio();return;}
- }
- await new Promise(resolve=>requestAnimationFrame(resolve));
+  if(!switching&&!photoOpen&&video?.readyState>=2&&video.currentTime!==lastTime){
+    lastTime=video.currentTime;
+    updateCameraInputSize();
+    const iw=cameraInput.width,ih=cameraInput.height;
+    // Process the WHOLE camera image. No cover crop, no extra software zoom.
+    cameraInputCtx.drawImage(video,0,0,iw,ih);
+    try{
+      await deadline(segmenter.send({image:cameraInput}),15000,
+        'The live background effect could not render on this browser. Retry in Chrome on Android or Safari on iPhone.');
+    }catch(e){showError(e);closeStudio();return;}
+  }
+  await new Promise(resolve=>requestAnimationFrame(resolve));
  }
 }
 function showError(message){
@@ -243,8 +282,9 @@ function showError(message){
 }
 $('#retryCamera').onclick=()=>{$('#cameraError').hidden=true;if(chosen)openPlace(chosen);};
 async function openPlace(p){
- if(active)return;chosen=p;faceZoom=1.2;$('#faceScale').textContent='1.2×';active=true;photoOpen=false;const id=++runId;frameCount=0;$('#shutter').disabled=true;
+ if(active)return;chosen=p;active=true;photoOpen=false;const id=++runId;frameCount=0;$('#shutter').disabled=true;
  $('#picker').classList.add('hidden');$('#studio').style.display='block';
+ configureCameraFrame();resetPersonSize();
  $('#loading').textContent='Opening camera… Please allow camera access.';$('#loading').classList.remove('hidden');$('#liveTitle').firstChild.textContent='Diwali in '+p[0];
  try{
  const imageReady=new Promise(resolve=>{bg.onload=()=>resolve(null);bg.onerror=()=>resolve(new Error('Destination image could not load. Try again.'));bg.src=p[2];});
@@ -317,7 +357,8 @@ $('#save').onclick=async()=>{
 };
 // Easy manual adjustment: zoom only the subject, never the whole scene.
 function updateFaceZoom(value){
- faceZoom=Math.round(Math.min(1.8,Math.max(1,value))*10)/10;
+ faceZoom=Math.round(Math.min(1.5,Math.max(.4,value))*10)/10;
+ faceSizeManuallySet=true;
  $('#faceScale').textContent=faceZoom.toFixed(1)+'×';
  lastTime=-1;
 }
@@ -339,7 +380,13 @@ async function updateOrientation(){
  configureCameraFrame();
  const landscape=$('#studio .stage').clientWidth>$('#studio .stage').clientHeight;
  // Switch to orientation-specific landmark framing (not centred landscape crop).
- if(landscape!==cameraRatioIsLandscape)setDefaultBackgroundFocus();
+ if(landscape!==cameraRatioIsLandscape){
+   setDefaultBackgroundFocus();
+   if(!faceSizeManuallySet){
+     faceZoom=initialPersonSize();
+     $('#faceScale').textContent=faceZoom.toFixed(1)+'×';
+   }
+ }
  // Do not renegotiate the hardware camera merely because the browser
  // address bar changes height. Do it only when portrait/landscape flips.
  if(landscape===cameraRatioIsLandscape)return;
