@@ -37,6 +37,21 @@ body{background:#f9efc9}
 @media(min-width:480px){#picker .city{aspect-ratio:4/4.5}}
 @media(prefers-reduced-motion:reduce){#picker .city{transition:none}}
 
+
+/* Full-screen camera in either device orientation. The picker stays mobile-sized. */
+#studio{position:fixed;inset:0;z-index:5;width:100vw;height:100vh;height:100dvh;min-height:0;overflow:hidden}
+#studio .stage{position:relative;width:100%;height:100%;overflow:hidden}
+#studio .stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+#studio .studioTop{padding-top:max(14px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+#studio .brandbar{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+@media (orientation:landscape) and (max-height:650px){
+  #studio .capturebar{left:auto;right:max(12px,env(safe-area-inset-right));top:50%;bottom:auto;transform:translateY(-50%);flex-direction:column;gap:12px;padding:0}
+  #studio .capturebar .control{width:72px;min-height:48px;padding:6px}
+  #studio .shutter{width:64px;height:64px;border-width:5px}
+  #studio .tip{left:18px;right:100px;bottom:35px;text-align:left;font-size:10px}
+  #studio .brandbar{font-size:9px}
+  #studio .studioTop{right:100px}
+}
 </style></head>
 <body><main class="app">
 <section id="picker"><div class="top"><div class="logo">RezLive<span>WALI DIWALI</span></div><a class="site" href="https://rezlive.com" target="_blank" rel="noreferrer">rezlive.com ↗</a></div><div class="welcome"><div class="diwali-glow" aria-hidden="true"><span>✦</span><div class="diya"></div><span>✦</span></div><h1>Select the destination for your <em>Diwali Family Photo.</em></h1><div class="promise"><i>✓</i> Your photo stays on your device. Nothing is uploaded.</div><div class="panel"><h2>Where are you celebrating?</h2><p>Select a destination, then open the live camera.</p><div id="cameraError" hidden role="alert" style="padding:14px;background:#fff0df;border-radius:12px;margin-bottom:12px"><p id="errorText"></p><button id="retryCamera" type="button">Retry camera</button></div><div id="cities" class="cities"></div><p class="fine">Powered by RezLive.com · Make travel dreams real</p></div></div></section>
@@ -44,7 +59,18 @@ body{background:#f9efc9}
 <section id="result"><div class="resultCopy"><div class="logo" style="color:#fff">RezLive<span style="color:#ffd15a">WALI DIWALI</span></div><h2>Your Diwali is ready.</h2><p>Share the journey. Celebrate the dream.</p></div><img id="photo" alt="Your RezLive Wali Diwali portrait"><button id="save" class="download">Save / share photo</button><a id="download" class="download" download="rezlive-wali-diwali.jpg">Download photo</a><p id="saveHint">On iPhone, choose Save Image from the share sheet. Downloads may appear in Files on other browsers.</p><button id="again" class="again">Create another travel moment</button></section></main>
 
 <script>
-const places=[['Paris','France','https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1000&q=85'],['London','UK','https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1000&q=85'],['Dubai','UAE','https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1000&q=85'],['New York','USA','https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=1000&q=85'],['Switzerland','Alps','https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=1000&q=85'],['Tokyo','Japan','https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?auto=format&fit=crop&w=1000&q=85'],['Rome','Italy','https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1000&q=85'],['Singapore','Singapore','https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1000&q=85'],['Bali','Indonesia','https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1000&q=85'],['Istanbul','Türkiye','https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1000&q=85']];
+const places=[
+  ["Paris", "France", "https://rezlive8.b-cdn.net/2026/banner/extra/Diwali Lights at the Eiffel Tower.png"],
+  ["London", "UK", "https://rezlive8.b-cdn.net/2026/banner/extra/London Riverside Diwali Fireworks Panorama.png"],
+  ["Dubai", "UAE", "https://rezlive8.b-cdn.net/2026/banner/extra/Dubai Skyline Fireworks at Blue Hour.png"],
+  ["New York", "USA", "https://rezlive8.b-cdn.net/2026/banner/extra/Diwali Lights Over Times Square.png"],
+  ["Switzerland", "Alps", "https://rezlive8.b-cdn.net/2026/banner/extra/Festive Fireworks Over Alpine Village.png"],
+  ["Tokyo", "Japan", "https://rezlive8.b-cdn.net/2026/banner/extra/Tokyo Twilight Fireworks Over Illuminated Plaza.png"],
+  ["Rome", "Italy", "https://rezlive8.b-cdn.net/2026/banner/extra/Festive Fireworks Over the Colosseum.png"],
+  ["Singapore", "Singapore", "https://rezlive8.b-cdn.net/2026/banner/extra/Diwali Lights Over Marina Bay.png"],
+  ["Bali", "Indonesia", "https://rezlive8.b-cdn.net/2026/banner/extra/Fireworks Over a Lakeside Temple.png"],
+  ["Istanbul", "Türkiye", "https://rezlive8.b-cdn.net/2026/banner/extra/Fireworks Over a Historic Domed Skyline.png"]
+];
 const $=s=>document.querySelector(s);
 const canvas=$('#canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const personLayer=document.createElement('canvas'),personCtx=personLayer.getContext('2d');
@@ -52,11 +78,27 @@ const backgroundLayer=document.createElement('canvas'),backgroundCtx=backgroundL
 for(const c of [personLayer,backgroundLayer]){c.width=canvas.width;c.height=canvas.height;}
 const cameraInput=document.createElement('canvas'),cameraInputCtx=cameraInput.getContext('2d',{alpha:false});
 let chosen,video,stream,segmenter,enginePromise,active=false,switching=false,runId=0;
+// Canvas, camera segmentation and exported photo all use the device's live aspect ratio.
+// The long edge is rendered at 1280 px, whether portrait or landscape.
 function configureCameraFrame(){
- // One portrait frame from camera input through segmentation, preview and export.
- for(const layer of [canvas,personLayer,backgroundLayer]){layer.width=720;layer.height=1280;}
- cameraInput.width=360;cameraInput.height=640;
+ const stage=$('#studio .stage');
+ const rect=stage.getBoundingClientRect();
+ const viewW=Math.max(1,Math.round(rect.width||window.innerWidth));
+ const viewH=Math.max(1,Math.round(rect.height||window.innerHeight));
+ const scale=1280/Math.max(viewW,viewH);
+ const outW=Math.max(2,Math.round(viewW*scale));
+ const outH=Math.max(2,Math.round(viewH*scale));
+ if(canvas.width===outW&&canvas.height===outH&&cameraInput.width>0)return;
+ for(const layer of [canvas,personLayer,backgroundLayer]){
+   layer.width=outW;layer.height=outH;
+ }
+ // Half-resolution segmentation for smoother operation on mobile phones.
+ cameraInput.width=Math.max(2,Math.round(outW/2));
+ cameraInput.height=Math.max(2,Math.round(outH/2));
  if(bg.complete&&bg.naturalWidth)drawFit(backgroundCtx,bg,'cover');
+ frameCount=0;
+ $('#shutter').disabled=true;
+ lastTime=-1;
 }
 
 let facing='user',frameCount=0,lastTime=-1,photoFile=null,photoURL=null,photoOpen=false;
@@ -68,7 +110,7 @@ function onResults(r){
  personCtx.globalCompositeOperation='source-over';
  personCtx.clearRect(0,0,canvas.width,canvas.height);
  const cameraRect=[0,0,canvas.width,canvas.height];
- // Output uses the actual camera aspect ratio; never letterbox the person layer.
+ // The mask and camera image share the same aspect ratio as the output canvas.
  personCtx.drawImage(r.segmentationMask,...cameraRect);
  // The mask is opaque on people: keep the image INSIDE it.
  personCtx.globalCompositeOperation='source-in';
@@ -111,11 +153,13 @@ async function startCamera(wanted){
  video.setAttribute('playsinline','');video.setAttribute('webkit-playsinline','');video.setAttribute('muted','');
  video.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none';
  document.body.appendChild(video);
- const constraints = {
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-  frameRate: { ideal: 24, max: 30 }
-};
+ const landscape=window.innerWidth>window.innerHeight;
+ const constraints={
+   width:{ideal:landscape?1280:720},
+   height:{ideal:landscape?720:1280},
+   aspectRatio:{ideal:landscape?16/9:9/16},
+   frameRate:{ideal:24,max:30}
+ };
  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{exact:wanted}}});}
  catch(e){if(wanted==='environment')throw new Error('A back camera is unavailable. Your front camera will stay selected.');stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{ideal:wanted}}});}
  const track=stream.getVideoTracks()[0];let caps;try{caps=track.getCapabilities?.();}catch{}
@@ -138,23 +182,14 @@ async function loop(id){
  while(active&&id===runId){
  if(!switching&&!photoOpen&&video?.readyState>=2&&video.currentTime!==lastTime){
  lastTime=video.currentTime;
- cameraInputCtx.clearRect(0,0,360,640);
-
-const scale = Math.min(
-  360 / video.videoWidth,
-  640 / video.videoHeight
-);
-
-const w = video.videoWidth * scale;
-const h = video.videoHeight * scale;
-
-cameraInputCtx.drawImage(
-  video,
-  (360-w)/2,
-  (640-h)/2,
-  w,
-  h
-);
+  // Contain the complete camera feed: don't crop/zoom faces to fill the view.
+  // The segmentation mask receives this exact same framing.
+  const iw=cameraInput.width,ih=cameraInput.height;
+  cameraInputCtx.fillStyle='#000';
+  cameraInputCtx.fillRect(0,0,iw,ih);
+  const scale=Math.min(iw/video.videoWidth,ih/video.videoHeight);
+  const w=video.videoWidth*scale,h=video.videoHeight*scale;
+  cameraInputCtx.drawImage(video,(iw-w)/2,(ih-h)/2,w,h);
  try{await deadline(segmenter.send({image:cameraInput}),15000,'The live background effect could not render on this browser. Retry in Chrome on Android or Safari on iPhone.');}catch(e){showError(e);closeStudio();return;}
  }
  await new Promise(resolve=>requestAnimationFrame(resolve));
@@ -184,7 +219,25 @@ async function openPlace(p){
  loop(id);
  }catch(e){showError(e);closeStudio();}
 }
-places.forEach(p=>{const b=document.createElement('button');b.className='city';b.style.setProperty('--bg','url("'+p[2]+'")');b.innerHTML='<b>'+p[0]+'</b><small>'+p[1]+'</small>';b.onclick=()=>openPlace(p);$('#cities').append(b);});
+// Load thumbnails as city cards approach the screen to reduce initial mobile data use.
+const cityObserver=('IntersectionObserver' in window) ? new IntersectionObserver(entries=>{
+ for(const entry of entries){
+  if(entry.isIntersecting){
+   const card=entry.target;
+   card.style.setProperty('--bg','url("'+card.dataset.image+'")');
+   cityObserver.unobserve(card);
+  }
+ }
+},{rootMargin:'250px'}) : null;
+places.forEach(p=>{
+ const b=document.createElement('button');
+ b.type='button';b.className='city';b.dataset.image=p[2];
+ b.innerHTML='<b>'+p[0]+'</b><small>'+p[1]+'</small>';
+ b.onclick=()=>openPlace(p);
+ $('#cities').append(b);
+ if(cityObserver)cityObserver.observe(b);
+ else b.style.setProperty('--bg','url("'+p[2]+'")');
+});
 function closeStudio(){active=false;runId++;stream?.getTracks().forEach(t=>t.stop());if(video){video.pause();video.srcObject=null;video.remove();}$('#studio').style.display='none';$('#picker').classList.remove('hidden');}
 $('#back').onclick=closeStudio;
 $('#flip').onclick=async()=>{
@@ -196,11 +249,13 @@ $('#shutter').onclick=()=>{
  if(!frameCount)return;$('#shutter').disabled=true;
  const shot=document.createElement('canvas');shot.width=canvas.width;shot.height=canvas.height;
  const sc=shot.getContext('2d');sc.drawImage(canvas,0,0);
- sc.fillStyle='rgba(20,10,30,.65)';sc.fillRect(0,shot.height-68,shot.width,68);
- sc.fillStyle='white';sc.font='bold 23px Arial';sc.textAlign='center';
- sc.fillText('REZLIVE WALI DIWALI · REZLIVE.COM',shot.width/2,shot.height-25);
+ const footerH=Math.max(34,Math.round(shot.height*.053));
+ const fontSize=Math.max(13,Math.min(23,Math.round(shot.width*.026)));
+ sc.fillStyle='rgba(20,10,30,.65)';sc.fillRect(0,shot.height-footerH,shot.width,footerH);
+ sc.fillStyle='white';sc.font=`bold ${fontSize}px Arial`;sc.textAlign='center';
+ sc.fillText('REZLIVE WALI DIWALI · REZLIVE.COM',shot.width/2,shot.height-footerH/2+fontSize*.34,shot.width-28);
  try{shot.toBlob(blob=>{
- if(!blob){showError('Could not prepare the photo. Please try again.');return;}
+ if(!blob){$('#shutter').disabled=false;showError('Could not prepare the photo. Please try again.');return;}
  if(photoURL)URL.revokeObjectURL(photoURL);
  photoFile=new File([blob],'rezlive-wali-diwali-'+Date.now()+'.jpg',{type:'image/jpeg'});
  photoURL=URL.createObjectURL(blob);$('#photo').src=photoURL;$('#thumbImage').src=photoURL;
@@ -212,12 +267,38 @@ $('#shutter').onclick=()=>{
 };
 function openPhoto(){if(!photoFile)return;photoOpen=true;$('#result').style.display='block';$('#again').textContent='← Back to camera';}
 $('#thumbnail').onclick=openPhoto;
-$('#again').onclick=()=>{photoOpen=false;$('#result').style.display='none';};
+$('#again').onclick=()=>{photoOpen=false;$('#result').style.display='none';$('#shutter').disabled=false;};
 $('#save').onclick=async()=>{
  if(!photoFile)return;
  try{if(navigator.canShare?.({files:[photoFile]})){await navigator.share({files:[photoFile],title:'RezLive Wali Diwali'});}
  else{$('#download').click();$('#saveHint').textContent='Photo downloaded. Check Downloads / Files. To save to Photos on iPhone, press and hold the photo and select Save Image.';}}
  catch(e){if(e.name!=='AbortError')$('#saveHint').textContent='Sharing is unavailable. Use Download photo, or press and hold the image to save it.';}
 };
+// Change orientation without leaving the camera or resetting the selected destination.
+// Some devices change getUserMedia video dimensions on rotation; others keep them fixed.
+let resizeTicket=0;
+async function updateOrientation(){
+ if(!active||photoOpen)return;
+ configureCameraFrame();
+ // Ask for a camera aspect ratio matching the new screen, when supported.
+ const track=stream?.getVideoTracks()[0];
+ if(track&&track.readyState==='live'){
+   const landscape=window.innerWidth>window.innerHeight;
+   try{
+     await track.applyConstraints({
+       width:{ideal:landscape?1280:720},
+       height:{ideal:landscape?720:1280},
+       aspectRatio:{ideal:landscape?16/9:9/16}
+     });
+   }catch(e){console.debug('Camera kept its native aspect ratio',e);}
+ }
+ lastTime=-1;
+}
+function scheduleOrientationUpdate(){
+ cancelAnimationFrame(resizeTicket);
+ resizeTicket=requestAnimationFrame(updateOrientation);
+}
+window.addEventListener('resize',scheduleOrientationUpdate);
+window.addEventListener('orientationchange',scheduleOrientationUpdate);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)lastTime=-1;});
 </script></body></html>
