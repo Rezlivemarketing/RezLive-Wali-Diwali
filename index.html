@@ -105,6 +105,15 @@ let facing='user',frameCount=0,lastTime=-1,photoFile=null,photoURL=null,photoOpe
 const bg=new Image();bg.crossOrigin='anonymous';
 function fit(source,mode){const sw=source.videoWidth||source.naturalWidth||source.width,sh=source.videoHeight||source.naturalHeight||source.height,s=(mode==='cover'?Math.max:Math.min)(canvas.width/sw,canvas.height/sh);return[(canvas.width-sw*s)/2,(canvas.height-sh*s)/2,sw*s,sh*s];}
 function drawFit(target,source,mode){target.drawImage(source,...fit(source,mode));}
+function drawCameraFrame(source,target,targetCtx){
+ const sourceW=source.videoWidth||source.naturalWidth||source.width;
+ const sourceH=source.videoHeight||source.naturalHeight||source.height;
+ if(!sourceW||!sourceH)return;
+ const sourceAspect=sourceW/sourceH,targetAspect=target.width/target.height;
+ const cropW=sourceAspect>targetAspect?sourceH*targetAspect:sourceW;
+ const cropH=sourceAspect>targetAspect?sourceH:sourceW/targetAspect;
+ targetCtx.drawImage(source,(sourceW-cropW)/2,(sourceH-cropH)/2,cropW,cropH,0,0,target.width,target.height);
+}
 function onResults(r){
  if(!active||switching)return;
  personCtx.globalCompositeOperation='source-over';
@@ -157,7 +166,7 @@ async function startCamera(wanted){
  const constraints={
    width:{ideal:landscape?1280:720},
    height:{ideal:landscape?720:1280},
-   aspectRatio:{ideal:landscape?16/9:9/16},
+   aspectRatio:{ideal:window.innerWidth/window.innerHeight},
    frameRate:{ideal:24,max:30}
  };
  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{exact:wanted}}});}
@@ -182,14 +191,8 @@ async function loop(id){
  while(active&&id===runId){
  if(!switching&&!photoOpen&&video?.readyState>=2&&video.currentTime!==lastTime){
  lastTime=video.currentTime;
-  // Contain the complete camera feed: don't crop/zoom faces to fill the view.
-  // The segmentation mask receives this exact same framing.
-  const iw=cameraInput.width,ih=cameraInput.height;
-  cameraInputCtx.fillStyle='#000';
-  cameraInputCtx.fillRect(0,0,iw,ih);
-  const scale=Math.min(iw/video.videoWidth,ih/video.videoHeight);
-  const w=video.videoWidth*scale,h=video.videoHeight*scale;
-  cameraInputCtx.drawImage(video,(iw-w)/2,(ih-h)/2,w,h);
+  // Crop the camera to the live viewport BEFORE segmentation: no padded strips.
+  drawCameraFrame(video,cameraInput,cameraInputCtx);
  try{await deadline(segmenter.send({image:cameraInput}),15000,'The live background effect could not render on this browser. Retry in Chrome on Android or Safari on iPhone.');}catch(e){showError(e);closeStudio();return;}
  }
  await new Promise(resolve=>requestAnimationFrame(resolve));
@@ -288,7 +291,7 @@ async function updateOrientation(){
      await track.applyConstraints({
        width:{ideal:landscape?1280:720},
        height:{ideal:landscape?720:1280},
-       aspectRatio:{ideal:landscape?16/9:9/16}
+       aspectRatio:{ideal:window.innerWidth/window.innerHeight}
      });
    }catch(e){console.debug('Camera kept its native aspect ratio',e);}
  }
