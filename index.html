@@ -52,10 +52,28 @@ body{background:#f9efc9}
   #studio .brandbar{font-size:9px}
   #studio .studioTop{right:100px}
 }
+
+/* Independent camera/person framing and landmark positioning. */
+#studio .framingControls{position:absolute;z-index:4;bottom:max(135px,calc(env(safe-area-inset-bottom) + 122px));left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:auto}
+#studio .frameControlGroup{display:flex;align-items:center;gap:5px;padding:5px 7px;border-radius:22px;background:#1e1730cc;backdrop-filter:blur(8px);font:700 11px Arial,sans-serif;white-space:nowrap;color:#fff;box-shadow:0 2px 14px #0005}
+#studio .frameControlGroup button{border:0;width:29px;height:29px;border-radius:50%;background:#ffffff30;color:white;font:700 17px Arial,sans-serif;cursor:pointer;touch-action:manipulation}
+#studio .frameControlGroup button:active{background:#ff5a25}
+#studio .frameControlGroup output{font-size:11px;min-width:34px;text-align:center}
+#studio .tip{bottom:max(181px,calc(env(safe-area-inset-bottom) + 168px))}
+@media (orientation:landscape) and (max-height:650px){
+ #studio .framingControls{bottom:max(44px,calc(env(safe-area-inset-bottom) + 38px));left:max(10px,env(safe-area-inset-left));transform:none;flex-direction:column;align-items:flex-start;gap:5px}
+ #studio .tip{bottom:16px;left:12px;right:100px;font-size:9px}
+ #studio .frameControlGroup{padding:3px 5px}
+ #studio .frameControlGroup button{width:27px;height:27px}
+}
 </style></head>
 <body><main class="app">
 <section id="picker"><div class="top"><div class="logo">RezLive<span>WALI DIWALI</span></div><a class="site" href="https://rezlive.com" target="_blank" rel="noreferrer">rezlive.com ↗</a></div><div class="welcome"><div class="diwali-glow" aria-hidden="true"><span>✦</span><div class="diya"></div><span>✦</span></div><h1>Select the destination for your <em>Diwali Family Photo.</em></h1><div class="promise"><i>✓</i> Your photo stays on your device. Nothing is uploaded.</div><div class="panel"><h2>Where are you celebrating?</h2><p>Select a destination, then open the live camera.</p><div id="cameraError" hidden role="alert" style="padding:14px;background:#fff0df;border-radius:12px;margin-bottom:12px"><p id="errorText"></p><button id="retryCamera" type="button">Retry camera</button></div><div id="cities" class="cities"></div><p class="fine">Powered by RezLive.com · Make travel dreams real</p></div></div></section>
-<section id="studio"><div class="stage"><canvas id="canvas" width="720" height="1280"></canvas><div class="loading" id="loading">Preparing your live Diwali background…<br><small>This can take a few seconds the first time.</small></div><div class="studioTop"><button id="back" class="back">←</button><div class="title" id="liveTitle">RezLive Wali Diwali<small>LIVE BACKGROUND</small></div></div><p class="tip">Keep everyone inside the frame · Rotate your phone anytime</p><div class="capturebar"><button id="flip" class="control" aria-label="Switch camera">↻<br><small>Back camera</small></button><button id="shutter" class="shutter" aria-label="Take photo" disabled></button><button id="thumbnail" class="control" aria-label="View last photo" disabled><img id="thumbImage" alt="Last photo"><small>Photos</small></button></div><div class="brandbar">REZLIVE WALI DIWALI · REZLIVE.COM</div></div></section>
+<section id="studio"><div class="stage"><canvas id="canvas" width="720" height="1280"></canvas><div class="loading" id="loading">Preparing your live Diwali background…<br><small>This can take a few seconds the first time.</small></div><div class="studioTop"><button id="back" class="back">←</button><div class="title" id="liveTitle">RezLive Wali Diwali<small>LIVE BACKGROUND</small></div></div><p class="tip">Adjust face size with − / + · Rotate your phone anytime</p>
+<div class="framingControls" aria-label="Photo framing">
+  <div class="frameControlGroup" aria-label="Face size controls"><span>Face</span><button id="faceMinus" type="button" aria-label="Make face smaller">−</button><output id="faceScale">1.2×</output><button id="facePlus" type="button" aria-label="Make face larger">+</button></div>
+  <div class="frameControlGroup" aria-label="Background position controls"><span>BG</span><button id="bgUp" type="button" aria-label="Move landmark up">↑</button><button id="bgDown" type="button" aria-label="Move landmark down">↓</button></div>
+</div><div class="capturebar"><button id="flip" class="control" aria-label="Switch camera">↻<br><small>Back camera</small></button><button id="shutter" class="shutter" aria-label="Take photo" disabled></button><button id="thumbnail" class="control" aria-label="View last photo" disabled><img id="thumbImage" alt="Last photo"><small>Photos</small></button></div><div class="brandbar">REZLIVE WALI DIWALI · REZLIVE.COM</div></div></section>
 <section id="result"><div class="resultCopy"><div class="logo" style="color:#fff">RezLive<span style="color:#ffd15a">WALI DIWALI</span></div><h2>Your Diwali is ready.</h2><p>Share the journey. Celebrate the dream.</p></div><img id="photo" alt="Your RezLive Wali Diwali portrait"><button id="save" class="download">Save / share photo</button><a id="download" class="download" download="rezlive-wali-diwali.jpg">Download photo</a><p id="saveHint">On iPhone, choose Save Image from the share sheet. Downloads may appear in Files on other browsers.</p><button id="again" class="again">Create another travel moment</button></section></main>
 
 <script>
@@ -95,7 +113,7 @@ function configureCameraFrame(){
  // Half-resolution segmentation for smoother operation on mobile phones.
  cameraInput.width=Math.max(2,Math.round(outW/2));
  cameraInput.height=Math.max(2,Math.round(outH/2));
- if(bg.complete&&bg.naturalWidth)drawFit(backgroundCtx,bg,'cover');
+ if(bg.complete&&bg.naturalWidth)setDefaultBackgroundFocus();
  frameCount=0;
  $('#shutter').disabled=true;
  lastTime=-1;
@@ -104,6 +122,25 @@ function configureCameraFrame(){
 let facing='user',frameCount=0,lastTime=-1,photoFile=null,photoURL=null,photoOpen=false;
 const bg=new Image();bg.crossOrigin='anonymous';
 function fit(source,mode){const sw=source.videoWidth||source.naturalWidth||source.width,sh=source.videoHeight||source.naturalHeight||source.height,s=(mode==='cover'?Math.max:Math.min)(canvas.width/sw,canvas.height/sh);return[(canvas.width-sw*s)/2,(canvas.height-sh*s)/2,sw*s,sh*s];}
+// Person zoom is independent of the scenery. 1× is the camera's normal view.
+let faceZoom=1.2;
+// Paris uses a higher landscape crop to keep the Eiffel Tower's top visible.
+let backgroundFocusY=0.5;
+function defaultBgFocus(){
+  return (chosen?.[0]==='Paris' && canvas.width>canvas.height) ? 0.35 : 0.5;
+}
+function renderBackground(){
+  if(!bg.complete||!bg.naturalWidth)return;
+  const iw=bg.naturalWidth, ih=bg.naturalHeight, cw=canvas.width, ch=canvas.height;
+  // Edge-to-edge without stretching the photograph.
+  const scale=Math.max(cw/iw,ch/ih),dw=iw*scale,dh=ih*scale;
+  const focusY=backgroundFocusY;
+  const x=Math.max(cw-dw,Math.min(0,(cw-dw)/2));
+  const y=Math.max(ch-dh,Math.min(0,ch/2-dh*focusY));
+  backgroundCtx.clearRect(0,0,cw,ch);
+  backgroundCtx.drawImage(bg,x,y,dw,dh);
+}
+function setDefaultBackgroundFocus(){backgroundFocusY=defaultBgFocus();renderBackground();}
 function drawFit(target,source,mode){target.drawImage(source,...fit(source,mode));}
 function onResults(r){
  if(!active||switching)return;
@@ -163,15 +200,13 @@ async function startCamera(wanted){
  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{exact:wanted}}});}
  catch(e){if(wanted==='environment')throw new Error('A back camera is unavailable. Your front camera will stay selected.');stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{...constraints,facingMode:{ideal:wanted}}});}
  const track=stream.getVideoTracks()[0];let caps;try{caps=track.getCapabilities?.();}catch{}
- if (caps?.zoom) {
-  try {
-    await track.applyConstraints({
-      advanced: [{ zoom: caps.zoom.min }]
-    });
-  } catch (e) {
-    console.log('Zoom adjustment unavailable');
-  }
-}
+ // Some devices support 0.5× ultra-wide. Do not force zoom.min, which
+ // made faces too small. Ask for a normal 1× view whenever supported.
+ if(caps?.zoom){
+   const normalZoom=Math.max(caps.zoom.min,Math.min(1,caps.zoom.max));
+   try{await track.applyConstraints({advanced:[{zoom:normalZoom}]});}
+   catch(e){console.debug('Browser controls lens zoom',e);}
+ }
  facing=wanted;video.srcObject=stream;
  await deadline(video.play(),15000,'Camera playback did not start. Close other camera apps and retry.');
  await deadline(new Promise(resolve=>{if(video.videoWidth&&video.videoHeight&&video.readyState>=2)return resolve();video.addEventListener('loadeddata',resolve,{once:true});}),15000,'Camera did not supply a video frame. Please retry.');
@@ -190,7 +225,7 @@ async function loop(id){
   // portrait source in portrait and a landscape source in landscape.
   const iw=cameraInput.width,ih=cameraInput.height;
   const sw=video.videoWidth,sh=video.videoHeight;
-  const cropScale=Math.max(iw/sw,ih/sh);
+  const cropScale=Math.max(iw/sw,ih/sh)*faceZoom;
   const sourceW=Math.min(sw,iw/cropScale);
   const sourceH=Math.min(sh,ih/cropScale);
   const sourceX=(sw-sourceW)/2;
@@ -208,7 +243,7 @@ function showError(message){
 }
 $('#retryCamera').onclick=()=>{$('#cameraError').hidden=true;if(chosen)openPlace(chosen);};
 async function openPlace(p){
- if(active)return;chosen=p;active=true;photoOpen=false;const id=++runId;frameCount=0;$('#shutter').disabled=true;
+ if(active)return;chosen=p;faceZoom=1.2;$('#faceScale').textContent='1.2×';active=true;photoOpen=false;const id=++runId;frameCount=0;$('#shutter').disabled=true;
  $('#picker').classList.add('hidden');$('#studio').style.display='block';
  $('#loading').textContent='Opening camera… Please allow camera access.';$('#loading').classList.remove('hidden');$('#liveTitle').firstChild.textContent='Diwali in '+p[0];
  try{
@@ -221,7 +256,7 @@ async function openPlace(p){
  if(imageError)throw imageError;
  $('#loading').textContent='Starting your live background…';
  if(!active||id!==runId){stream?.getTracks().forEach(t=>t.stop());return;}
- backgroundCtx.clearRect(0,0,canvas.width,canvas.height);drawFit(backgroundCtx,bg,'cover');
+ setDefaultBackgroundFocus();
  loop(id);
  }catch(e){showError(e);closeStudio();}
 }
@@ -280,6 +315,19 @@ $('#save').onclick=async()=>{
  else{$('#download').click();$('#saveHint').textContent='Photo downloaded. Check Downloads / Files. To save to Photos on iPhone, press and hold the photo and select Save Image.';}}
  catch(e){if(e.name!=='AbortError')$('#saveHint').textContent='Sharing is unavailable. Use Download photo, or press and hold the image to save it.';}
 };
+// Easy manual adjustment: zoom only the subject, never the whole scene.
+function updateFaceZoom(value){
+ faceZoom=Math.round(Math.min(1.8,Math.max(1,value))*10)/10;
+ $('#faceScale').textContent=faceZoom.toFixed(1)+'×';
+ lastTime=-1;
+}
+$('#faceMinus').addEventListener('click',()=>updateFaceZoom(faceZoom-.1));
+$('#facePlus').addEventListener('click',()=>updateFaceZoom(faceZoom+.1));
+// Move the landmark, not the person. Useful for Eiffel Tower and other tall landmarks.
+function moveBackground(d){backgroundFocusY=Math.max(.18,Math.min(.82,backgroundFocusY+d));renderBackground();lastTime=-1;}
+$('#bgUp').addEventListener('click',()=>moveBackground(.04));
+$('#bgDown').addEventListener('click',()=>moveBackground(-.04));
+
 // Rebuild the entire compositing frame when the phone rotates.
 // The destination is always rendered edge-to-edge, rather than filling
 // spaces alongside a smaller processing canvas with fake placeholders.
@@ -290,6 +338,8 @@ async function updateOrientation(){
  if(!active||photoOpen)return;
  configureCameraFrame();
  const landscape=$('#studio .stage').clientWidth>$('#studio .stage').clientHeight;
+ // Switch to orientation-specific landmark framing (not centred landscape crop).
+ if(landscape!==cameraRatioIsLandscape)setDefaultBackgroundFocus();
  // Do not renegotiate the hardware camera merely because the browser
  // address bar changes height. Do it only when portrait/landscape flips.
  if(landscape===cameraRatioIsLandscape)return;
