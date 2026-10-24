@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f6cd42"><title>RezLive Wali Diwali — Corrected Camera & Subject Framing</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f6cd42"><title>RezLive Wali Diwali — Person Visibility Fixed</title>
 <style>
 :root{--orange:#ff5a25;--sun:#ffb629;--ink:#1f1930}*{box-sizing:border-box}body{margin:0;background:#fff6e9;color:var(--ink);font-family:Arial,Helvetica,sans-serif}.app{width:min(100%,520px);min-height:100svh;margin:auto;overflow:hidden;background:radial-gradient(circle at 84% 4%,#ffd960 0,transparent 22rem),#fff7ea}.top{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 8px}.logo{font-size:25px;line-height:.85;font-weight:900;letter-spacing:-1.8px;color:#ef4d28}.logo span{display:block;font-size:11px;color:#271b36;letter-spacing:1.2px;margin-top:6px}.site{font-size:12px;font-weight:800;color:#271b36;text-decoration:none;border-bottom:2px solid var(--orange);padding-bottom:3px}.welcome{padding:22px 20px 36px}.tag{display:inline-block;background:#261b35;color:#fff;padding:7px 11px;border-radius:999px;font-size:10px;font-weight:bold;letter-spacing:1.1px}.welcome h1{font-size:46px;line-height:.91;letter-spacing:-2.8px;margin:17px 0 12px;max-width:8ch}.welcome h1 em{color:var(--orange);font-style:normal}.intro{font-size:15px;line-height:1.46;color:#625969;max-width:31ch}.promise{display:flex;gap:9px;align-items:center;margin:18px 0 21px;font-size:12px;font-weight:bold;color:#4d4256}.promise i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#dff7ea;color:#237147;font-style:normal}.panel{background:#fff;border:1px solid #f0dfcb;border-radius:24px;padding:17px;box-shadow:0 17px 40px #6d3a1b17}.panel h2{font-size:19px;letter-spacing:-.7px;margin:0}.panel p{margin:5px 0 14px;color:#746b75;font-size:12px}.cities{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;max-height:305px;overflow:auto;padding:2px}.city{border:0;border-radius:15px;min-height:103px;overflow:hidden;position:relative;background-image:linear-gradient(#0000,#0009),var(--bg);background-size:cover;background-position:center;color:#fff;text-align:left;padding:12px;box-shadow:inset 0 0 0 1px #fff2}.city.selected{outline:3px solid var(--sun);outline-offset:2px}.city b{position:absolute;bottom:11px;left:11px;font-size:15px}.city small{position:absolute;bottom:11px;right:10px;font-size:10px;opacity:.9}.go{width:100%;border:0;border-radius:14px;background:linear-gradient(100deg,var(--orange),#fa3375);color:#fff;padding:15px;margin-top:16px;font-weight:900;font-size:14px}.go:disabled{opacity:.4}.fine{text-align:center;font-size:10px;color:#8b7e86;margin:11px 0 0}.fine:before{content:"●";color:#29a264;margin-right:4px}
 #studio,#result{display:none;min-height:100svh;background:#171123;color:#fff}.studioTop{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:18px;background:linear-gradient(#000a,transparent)}.back,.control{border:0;background:#fff2;color:#fff;border-radius:999px;padding:10px 12px;font-weight:bold}.title{text-align:center;font-weight:900;font-size:13px;letter-spacing:.2px}.title small{display:block;font-size:9px;opacity:.75;margin-top:3px;letter-spacing:1px}.stage{position:relative;width:100%;height:100svh;overflow:hidden;background:#1e1525}.stage canvas{width:100%;height:100%;display:block;object-fit:cover}.loading{position:absolute;z-index:2;top:50%;left:50%;transform:translate(-50%,-50%);width:min(84%,320px);padding:19px;border-radius:18px;text-align:center;background:#251b34e8;font-size:13px;line-height:1.4}.capturebar{position:absolute;z-index:3;bottom:max(26px,env(safe-area-inset-bottom));left:0;right:0;display:flex;justify-content:center;align-items:center;gap:26px}.shutter{width:72px;height:72px;border-radius:50%;border:6px solid #fff;background:var(--orange);box-shadow:0 0 0 3px #ff5a25}.tip{position:absolute;z-index:3;bottom:118px;left:0;right:0;text-align:center;font-size:11px;text-shadow:0 1px 4px #000}.brandbar{position:absolute;z-index:3;bottom:0;left:0;right:0;text-align:center;padding:10px;background:linear-gradient(transparent,#000b);font-size:10px;font-weight:bold;letter-spacing:1px}.hidden{display:none!important}
@@ -141,24 +141,29 @@ function resetPersonSize(){
  $('#faceScale').textContent=faceZoom.toFixed(1)+'×';
 }
 
-// Find all substantial people in the segmentation mask, not just one face.
-// Reading a small copy of the mask (~160px) is cheap even on mobile devices.
-// Small isolated noise is ignored; connected person regions are combined.
-function findPeopleBounds(mask,sourceWidth,sourceHeight){
+// Detect the actual *visible person* after MediaPipe has removed the backdrop.
+// The segmentation mask's RGB may be black even when its alpha is correct:
+// NEVER demand both bright RGB and alpha; that hid the user completely.
+// This tiny alpha-only probe keeps the work inexpensive on mobile phones.
+function findPeopleBounds(person,sourceWidth,sourceHeight){
  const longest=160;
  const ratio=Math.min(1,longest/Math.max(sourceWidth,sourceHeight));
  const mw=Math.max(8,Math.round(sourceWidth*ratio));
  const mh=Math.max(8,Math.round(sourceHeight*ratio));
  if(maskProbe.width!==mw||maskProbe.height!==mh){maskProbe.width=mw;maskProbe.height=mh;}
  maskProbeCtx.clearRect(0,0,mw,mh);
- maskProbeCtx.drawImage(mask,0,0,mw,mh);
+ maskProbeCtx.drawImage(person,0,0,mw,mh);
  const rgba=maskProbeCtx.getImageData(0,0,mw,mh).data;
  const occupied=new Uint8Array(mw*mh);
+ let total=0;
  for(let i=0;i<occupied.length;i++){
-   const p=i*4;
-   const light=(rgba[p]+rgba[p+1]+rgba[p+2])/3;
-   occupied[i]=(rgba[p+3]>100 && light>125)?1:0;
+   // The person has already been isolated with source-in: transparent pixels
+   // are NOT part of the person, regardless of hair/skin/clothing colour.
+   if(rgba[i*4+3]>35){occupied[i]=1;total++;}
  }
+ if(total<Math.max(12,mw*mh*.001))return null;
+ // Reject a broken fully opaque mask rather than measuring the whole room.
+ if(total>mw*mh*.96)return null;
  const visited=new Uint8Array(occupied.length);
  const queue=new Int32Array(occupied.length);
  const components=[];
@@ -180,16 +185,15 @@ function findPeopleBounds(mask,sourceWidth,sourceHeight){
  }
  if(!components.length)return null;
  const largest=Math.max(...components.map(c=>c.count));
- // Include multiple people, but reject tiny scattered false positives.
- const valid=components.filter(c=>c.count>=Math.max(10,largest*.08,mw*mh*.002));
+ // Preserve family / group members rather than only the largest person.
+ const valid=components.filter(c=>c.count>=Math.max(8,largest*.06,mw*mh*.0015));
  if(!valid.length)return null;
  let x1=mw,y1=mh,x2=0,y2=0;
  for(const c of valid){
    x1=Math.min(x1,c.minX);y1=Math.min(y1,c.minY);
    x2=Math.max(x2,c.maxX+1);y2=Math.max(y2,c.maxY+1);
  }
- // A little padding retains wispy hair, arms, clothing and mask feathering.
- const padx=Math.max(3,(x2-x1)*.07),pady=Math.max(3,(y2-y1)*.07);
+ const padx=Math.max(2,(x2-x1)*.04),pady=Math.max(2,(y2-y1)*.04);
  x1=Math.max(0,x1-padx);x2=Math.min(mw,x2+padx);
  y1=Math.max(0,y1-pady);y2=Math.min(mh,y2+pady);
  const fx=sourceWidth/mw,fy=sourceHeight/mh;
@@ -245,8 +249,12 @@ function onResults(r){
  // Recompute bounds every 3 frames (on a tiny buffer), then smooth to avoid flicker.
  // If AI detection fails temporarily, retain the last trustworthy framing.
  if(probeTick++%3===0 || !measuredBounds){
-   try {measuredBounds=findPeopleBounds(r.segmentationMask,sw,sh);}
-   catch(e){console.debug('Segmentation mask bounds unavailable',e);}
+   try {
+     const latest=findPeopleBounds(isolatedPerson,sw,sh);
+     if(latest)measuredBounds=latest;
+   } catch(e) {
+     console.debug('Person alpha-bounds unavailable; using framing fallback',e);
+   }
  }
  const bounds=stablePersonBounds(measuredBounds);
  if(bounds&&bounds.w>2&&bounds.h>2){
@@ -268,7 +276,15 @@ function onResults(r){
      left,top,destW,destH);
    $('#shutter').disabled=false;
  }else{
-   $('#shutter').disabled=true;
+   // Bounding-box detection may fail briefly on some devices. Still show
+   // the MediaPipe cut-out instead of displaying ONLY the destination image.
+   // This fallback intentionally centres the source; it does not alter camera
+   // hardware zoom, image orientation, or the background composition.
+   const landscape=cw>ch;
+   const scale=Math.min(cw*(landscape?.78:.90)/sw,ch*(landscape?.73:.48)/sh)*faceZoom;
+   const w=sw*scale,h=sh*scale;
+   ctx.drawImage(isolatedPerson,(cw-w)/2,ch*.65-h/2,w,h);
+   $('#shutter').disabled=false;
  }
  frameCount++;
  $('#loading').classList.add('hidden');
@@ -338,6 +354,7 @@ function updateCameraInputSize(){
  const h=Math.max(2,Math.round(vh*scale));
  if(cameraInput.width!==w||cameraInput.height!==h){
    cameraInput.width=w;cameraInput.height=h;
+   measuredBounds=null;smoothedSubjectBounds=null;probeTick=0;
  }
 }
 async function loop(id){
