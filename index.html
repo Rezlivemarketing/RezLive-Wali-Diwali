@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f6cd42"><title>RezLive Wali Diwali — Seamless Camera Fix</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f6cd42"><title>RezLive Wali Diwali — Matte Repair v3</title>
 <style>
 :root{--orange:#ff5a25;--sun:#ffb629;--ink:#1f1930}*{box-sizing:border-box}body{margin:0;background:#fff6e9;color:var(--ink);font-family:Arial,Helvetica,sans-serif}.app{width:min(100%,520px);min-height:100svh;margin:auto;overflow:hidden;background:radial-gradient(circle at 84% 4%,#ffd960 0,transparent 22rem),#fff7ea}.top{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 8px}.logo{font-size:25px;line-height:.85;font-weight:900;letter-spacing:-1.8px;color:#ef4d28}.logo span{display:block;font-size:11px;color:#271b36;letter-spacing:1.2px;margin-top:6px}.site{font-size:12px;font-weight:800;color:#271b36;text-decoration:none;border-bottom:2px solid var(--orange);padding-bottom:3px}.welcome{padding:22px 20px 36px}.tag{display:inline-block;background:#261b35;color:#fff;padding:7px 11px;border-radius:999px;font-size:10px;font-weight:bold;letter-spacing:1.1px}.welcome h1{font-size:46px;line-height:.91;letter-spacing:-2.8px;margin:17px 0 12px;max-width:8ch}.welcome h1 em{color:var(--orange);font-style:normal}.intro{font-size:15px;line-height:1.46;color:#625969;max-width:31ch}.promise{display:flex;gap:9px;align-items:center;margin:18px 0 21px;font-size:12px;font-weight:bold;color:#4d4256}.promise i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#dff7ea;color:#237147;font-style:normal}.panel{background:#fff;border:1px solid #f0dfcb;border-radius:24px;padding:17px;box-shadow:0 17px 40px #6d3a1b17}.panel h2{font-size:19px;letter-spacing:-.7px;margin:0}.panel p{margin:5px 0 14px;color:#746b75;font-size:12px}.cities{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;max-height:305px;overflow:auto;padding:2px}.city{border:0;border-radius:15px;min-height:103px;overflow:hidden;position:relative;background-image:linear-gradient(#0000,#0009),var(--bg);background-size:cover;background-position:center;color:#fff;text-align:left;padding:12px;box-shadow:inset 0 0 0 1px #fff2}.city.selected{outline:3px solid var(--sun);outline-offset:2px}.city b{position:absolute;bottom:11px;left:11px;font-size:15px}.city small{position:absolute;bottom:11px;right:10px;font-size:10px;opacity:.9}.go{width:100%;border:0;border-radius:14px;background:linear-gradient(100deg,var(--orange),#fa3375);color:#fff;padding:15px;margin-top:16px;font-weight:900;font-size:14px}.go:disabled{opacity:.4}.fine{text-align:center;font-size:10px;color:#8b7e86;margin:11px 0 0}.fine:before{content:"●";color:#29a264;margin-right:4px}
 #studio,#result{display:none;min-height:100svh;background:#171123;color:#fff}.studioTop{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:18px;background:linear-gradient(#000a,transparent)}.back,.control{border:0;background:#fff2;color:#fff;border-radius:999px;padding:10px 12px;font-weight:bold}.title{text-align:center;font-weight:900;font-size:13px;letter-spacing:.2px}.title small{display:block;font-size:9px;opacity:.75;margin-top:3px;letter-spacing:1px}.stage{position:relative;width:100%;height:100svh;overflow:hidden;background:#1e1525}.stage canvas{width:100%;height:100%;display:block;object-fit:cover}.loading{position:absolute;z-index:2;top:50%;left:50%;transform:translate(-50%,-50%);width:min(84%,320px);padding:19px;border-radius:18px;text-align:center;background:#251b34e8;font-size:13px;line-height:1.4}.capturebar{position:absolute;z-index:3;bottom:max(26px,env(safe-area-inset-bottom));left:0;right:0;display:flex;justify-content:center;align-items:center;gap:26px}.shutter{width:72px;height:72px;border-radius:50%;border:6px solid #fff;background:var(--orange);box-shadow:0 0 0 3px #ff5a25}.tip{position:absolute;z-index:3;bottom:118px;left:0;right:0;text-align:center;font-size:11px;text-shadow:0 1px 4px #000}.brandbar{position:absolute;z-index:3;bottom:0;left:0;right:0;text-align:center;padding:10px;background:linear-gradient(transparent,#000b);font-size:10px;font-weight:bold;letter-spacing:1px}.hidden{display:none!important}
@@ -118,6 +118,8 @@ function configureCameraFrame(){
  // Diwali background still fills the entire portrait/landscape screen.
  if(bg.complete&&bg.naturalWidth)setDefaultBackgroundFocus();
  frameCount=0;lastValidPersonFrame=0;failedMaskFrames=0;
+ measuredBounds=null;smoothedSubjectBounds=null;probeTick=0;
+ personCtx.clearRect(0,0,outW,outH);
  $('#shutter').disabled=true;
  lastTime=-1;
 }
@@ -229,59 +231,117 @@ function renderBackground(){
 }
 function setDefaultBackgroundFocus(){backgroundFocusY=defaultBgFocus();renderBackground();}
 function drawFit(target,source,mode){target.drawImage(source,...fit(source,mode));}
-// MediaPipe may provide the segmentation mask as transparency OR as an opaque
-// grayscale image. Treating an opaque grayscale mask as alpha paints a solid
-// rectangular video on top of the destination. Convert either format into a
-// REAL transparency mask before compositing the original camera pixels.
+// MediaPipe masks are not guaranteed to have the same pixel layout on every
+// browser/GPU. Some devices return transparent-alpha masks; others return
+// OPAQUE grayscale masks. Measuring only "alpha varies" is unsafe: a nearly
+// opaque rectangle can have slight alpha variation around its outside edge.
+// Inspect BOTH encodings and select the one that behaves like a person matte.
+const MASK_DIAGNOSTICS = new URLSearchParams(location.search).has('debugMask');
+let maskFormat='unknown',maskCoverage=0,maskReason='';
+let diagnosticsNode=null;
+function updateMaskDiagnostics(){
+ if(!MASK_DIAGNOSTICS)return;
+ if(!diagnosticsNode){
+   diagnosticsNode=document.createElement('output');
+   diagnosticsNode.id='maskDiagnostics';
+   diagnosticsNode.style.cssText='position:fixed;z-index:25;left:5px;top:55px;padding:8px;background:#000c;color:#fff;font:12px monospace;border-radius:6px;pointer-events:none';
+   document.body.appendChild(diagnosticsNode);
+ }
+ diagnosticsNode.textContent=`Mask: ${maskFormat}, area: ${(maskCoverage*100).toFixed(0)}% — ${maskReason}`;
+}
+function chooseMaskChannel(data,w,h){
+ const candidates=[];
+ const stride=Math.max(1,Math.floor(w*h/3500));
+ for(const type of ['alpha','luma','red','green','blue']){
+   let count=0,bright=0,borderCount=0,borderBright=0,min=255,max=0;
+   for(let i=0;i<w*h;i+=stride){
+     const p=i*4,x=i%w,y=Math.floor(i/w);
+     const v=(type==='alpha')?data[p+3]:
+       (type==='red')?data[p]:
+       (type==='green')?data[p+1]:
+       (type==='blue')?data[p+2]:
+       Math.round((data[p]+data[p+1]+data[p+2])/3);
+     count++;if(v<min)min=v;if(v>max)max=v;
+     if(v>=125)bright++;
+     // A camera-frame rectangle strongly occupies its TOP and SIDE edges.
+     if(y<h*.06 || x<w*.035 || x>w*.965){
+       borderCount++;
+       if(v>=125)borderBright++;
+     }
+   }
+   const ratio=bright/count;
+   const borderRatio=borderBright/Math.max(1,borderCount);
+   // Ignore a fully opaque RGBA channel or an almost entirely empty mask.
+   if(max-min<45 || ratio<.006 || ratio>.88 || borderRatio>.80)continue;
+   // Prefer a channel that has a believable silhouette and clears the borders.
+   const score=(1-borderRatio)*3+Math.min(1,(max-min)/255)+
+     (ratio>=.025&&ratio<=.70?1:0);
+   candidates.push({type,score,ratio,borderRatio});
+ }
+ candidates.sort((a,b)=>b.score-a.score);
+ return candidates[0]||null;
+}
 function makeTransparentPerson(r,sw,sh){
+ if(!r.segmentationMask||!r.image)return false;
  if(alphaMask.width!==sw||alphaMask.height!==sh){
    alphaMask.width=sw;alphaMask.height=sh;
  }
  alphaMaskCtx.globalCompositeOperation='source-over';
  alphaMaskCtx.clearRect(0,0,sw,sh);
  alphaMaskCtx.drawImage(r.segmentationMask,0,0,sw,sh);
- const data=alphaMaskCtx.getImageData(0,0,sw,sh);
- const a=data.data,pixels=sw*sh;
- let minAlpha=255,maxAlpha=0,minLight=255,maxLight=0;
- // Sample a range of pixels to determine how this browser encodes the mask.
- for(let i=0;i<pixels;i+=Math.max(1,Math.floor(pixels/700))){
-   const k=i*4;
-   const alpha=a[k+3];
-   const light=(a[k]+a[k+1]+a[k+2])/3;
-   if(alpha<minAlpha)minAlpha=alpha;
-   if(alpha>maxAlpha)maxAlpha=alpha;
-   if(light<minLight)minLight=light;
-   if(light>maxLight)maxLight=light;
- }
- const alphaVaries=maxAlpha-minAlpha>35;
- const grayscaleVaries=maxLight-minLight>35;
- // If nothing separates person from background, do not draw a solid rectangle.
- if(!alphaVaries && !grayscaleVaries)return false;
- // Very dark RGB with varying alpha is a perfectly valid MediaPipe mask.
- const useAlpha=alphaVaries;
- let visible=0;
- const fadeEdge=Math.max(3,Math.round(Math.min(sw,sh)*.018));
+ const img=alphaMaskCtx.getImageData(0,0,sw,sh);
+ const rgba=img.data,pixels=sw*sh;
+ const chosenMask=chooseMaskChannel(rgba,sw,sh);
+ if(!chosenMask){maskFormat='none';maskCoverage=0;maskReason='No valid person silhouette in segmentation mask';return false;}
+ const selectedChannel=chosenMask.type;
+ maskFormat=selectedChannel;
+ maskCoverage=chosenMask.ratio;
+ let visible=0,topHits=0,leftHits=0,rightHits=0;
+ const topRows=Math.max(2,Math.round(sh*.025));
+ const sideCols=Math.max(2,Math.round(sw*.025));
  for(let y=0;y<sh;y++){
    for(let x=0;x<sw;x++){
      const k=(y*sw+x)*4;
-     let personAlpha=useAlpha?a[k+3]:Math.round((a[k]+a[k+1]+a[k+2])/3);
-     // Feather camera sensor edges, preventing sharp video-frame boundaries
-     // when shoulders or arms extend outside the source frame.
-     const distance=Math.min(x,y,sw-1-x,sh-1-y);
-     if(distance<fadeEdge)personAlpha=Math.round(personAlpha*Math.max(0,distance/fadeEdge));
-     if(personAlpha>40)visible++;
-     a[k]=255;a[k+1]=255;a[k+2]=255;a[k+3]=personAlpha;
+     const raw=(selectedChannel==='alpha')?rgba[k+3]:
+       (selectedChannel==='red')?rgba[k]:
+       (selectedChannel==='green')?rgba[k+1]:
+       (selectedChannel==='blue')?rgba[k+2]:
+       (rgba[k]+rgba[k+1]+rgba[k+2])/3;
+     // Suppress faint background leftovers, while retaining soft hair edges.
+     const t=Math.max(0,Math.min(1,(raw-45)/155));
+     let matte=Math.round(255*t*t*(3-2*t));
+     // Fade only the camera sensor's physical border. Do not fade the
+     // bounding-box crop: that would create four hard rectangular edges.
+     const edge=Math.min(x,y,sw-1-x,sh-1-y);
+     const softEdge=Math.max(3,Math.round(Math.min(sw,sh)*.012));
+     if(edge<softEdge)matte=Math.round(matte*edge/softEdge);
+     if(matte>100){
+       visible++;
+       if(y<topRows)topHits++;
+       if(x<sideCols)leftHits++;
+       if(x>=sw-sideCols)rightHits++;
+     }
+     rgba[k]=255;rgba[k+1]=255;rgba[k+2]=255;rgba[k+3]=matte;
    }
  }
- // Ignore a failed mask that labels nearly the entire frame as foreground.
- if(visible<pixels*.001 || visible>pixels*.90)return false;
- alphaMaskCtx.putImageData(data,0,0);
+ // Reject the previously-seen solid rectangular video mask. Someone can
+ // touch one frame edge, but all three being mostly occupied is abnormal.
+ const filled=visible/pixels;
+ const threeEdges=(topHits/(sw*topRows)>.7 &&
+                   leftHits/(sh*sideCols)>.7 &&
+                   rightHits/(sh*sideCols)>.7);
+ if(filled<.006||filled>.87||threeEdges){
+   maskReason='Rejected solid camera-frame-shaped mask';
+   return false;
+ }
+ alphaMaskCtx.putImageData(img,0,0);
  isolatedPersonCtx.globalCompositeOperation='source-over';
  isolatedPersonCtx.clearRect(0,0,sw,sh);
  isolatedPersonCtx.drawImage(r.image,0,0,sw,sh);
  isolatedPersonCtx.globalCompositeOperation='destination-in';
  isolatedPersonCtx.drawImage(alphaMask,0,0,sw,sh);
  isolatedPersonCtx.globalCompositeOperation='source-over';
+ maskReason='Person segmented';
  return true;
 }
 function onResults(r){
@@ -298,13 +358,16 @@ function onResults(r){
  ctx.drawImage(backgroundLayer,0,0,cw,ch);
  let hasMask=false;
  try{hasMask=makeTransparentPerson(r,sw,sh);}
- catch(e){console.warn('Unable to read MediaPipe transparency mask',e);}
+ catch(e){console.warn('Unable to read MediaPipe transparency mask',e);maskReason=e.message;}
+ updateMaskDiagnostics();
  if(!hasMask){
+   $('#shutter').disabled=true;
    failedMaskFrames++;
    // Preserve the last good cutout briefly while MediaPipe reacquires a person.
-   if(lastValidPersonFrame && failedMaskFrames<12){ctx.drawImage(personLayer,0,0,cw,ch);}
-   else if(failedMaskFrames>=12){
-     $('#loading').textContent='Could not isolate the person. Try brighter lighting or move into the camera view.';
+   if(lastValidPersonFrame && failedMaskFrames<8){ctx.drawImage(personLayer,0,0,cw,ch);}
+   else if(failedMaskFrames>=8){
+     measuredBounds=null;smoothedSubjectBounds=null;
+     $('#loading').textContent='Camera is running, but the person mask is unavailable. Face the camera in brighter light.';
      $('#loading').classList.remove('hidden');
      $('#shutter').disabled=true;
    }
@@ -319,7 +382,8 @@ function onResults(r){
  }
  const bounds=stablePersonBounds(measuredBounds);
  if(!bounds||bounds.w<=2||bounds.h<=2){
-   if(lastValidPersonFrame)ctx.drawImage(personLayer,0,0,cw,ch);
+   if(lastValidPersonFrame && failedMaskFrames<8)ctx.drawImage(personLayer,0,0,cw,ch);
+   $('#shutter').disabled=true;
    return;
  }
  // Photo booth scale is measured relative to PEOPLE, not the entire
